@@ -1,0 +1,19 @@
+{
+  "name": "eta-server",
+  "version": "0.0.0",
+  "dependencies": {},
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-phplint": "0.0.5",
+    "grunt-rsync": "^0.6.0",
+    "load-grunt-tasks": "^0.4.0",
+    "time-grunt": "^0.3.2"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "scripts": {
+    "test": "grunt test"
+  }
+}
