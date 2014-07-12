@@ -1,20 +1,13 @@
 <?php
 date_default_timezone_set("Australia/Brisbane");
 
-$_SESSION['userId'] = 1;
+// $_SESSION['userId'] = 1;
 
 // Restricted to logged in current user
 $app->group('/me', $authenticate($app), function () use ($app) {
 // $app->group('/me', function () use ($app) {
 	$app->get('/hello', function() use ($app) {
-		// print_r($_SESSION);
-		// die();
 		echo '{"hello": "world"}';
-		// $projectId = 1;
-		 // else {
-	    	// echo 'already done';
-	    // }
-
 	});
 
 	$app->get('/user', function() {
@@ -24,7 +17,9 @@ $app->group('/me', $authenticate($app), function () use ($app) {
 
 	$app->get('/partner', function() {
 		$user = R::load('user', $_SESSION['userId']);
-		$partner = R::load('user', $user->partner_id);
+		$partner = R::findOne('user', ' partner_id = :user_id ', array(
+			':user_id' => $user->id)
+		);
 		echo json_encode($partner->export(), JSON_NUMERIC_CHECK);
 	});
 
@@ -35,6 +30,11 @@ $app->group('/me', $authenticate($app), function () use ($app) {
 		$partner = R::findOne('user', ' code = :code ', array(
 			'code' => $partnerCode)
 		);
+		if(!$partner) {
+			$app->halt(404, 'Couldn\'t find partner with code ' . $partnerCode);
+			return;
+		}
+
 		$user->partner_id = $partner->id;
 		R::store($user);
 		echo json_encode($partner->export(), JSON_NUMERIC_CHECK);

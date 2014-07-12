@@ -35,21 +35,21 @@ $app->get('/setup', function() {
 	R::wipe('couple');
 	R::wipe('user');
 	
-	$userA = R::dispense('user');
-	$userA->email = 'cmcnamara87@gmail.com';
-	$userA->name = 'Craig McNamara';
-	$userA->password = md5('test');
-	$userA->code = 'pussycat36';
-	R::store($userA);
+	// $userA = R::dispense('user');
+	// $userA->email = 'cmcnamara87@gmail.com';
+	// $userA->name = 'Craig McNamara';
+	// $userA->password = md5('test');
+	// $userA->code = 'pussycat36';
+	// R::store($userA);
 
-	$userB = R::dispense('user');
-	$userB->email = 'nick@gmail.com';
-	$userB->name = 'Nick Georgiou';
-	$userB->password = md5('test');
-	$userB->code = 'foxylady18';
-	R::store($userB);
+	// $userB = R::dispense('user');
+	// $userB->email = 'nick@gmail.com';
+	// $userB->name = 'Nick Georgiou';
+	// $userB->password = md5('test');
+	// $userB->code = 'foxylady18';
+	// R::store($userB);
 
-	R::store($userA);
+	// R::store($userA);
 });
 
 $app->get('/me/following/posts', function() {

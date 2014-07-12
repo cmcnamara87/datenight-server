@@ -32,12 +32,12 @@ require 'routes/public.php';
 require 'db/db.php';
 
 // Add session middleware
-// $app->add(new \Slim\Middleware\SessionCookie(
-// 	array(
-// 		'secret' => 'thisismysecret',
-// 		'expires' => '7 days',
-// 	))
-// );
+$app->add(new \Slim\Middleware\SessionCookie(
+	array(
+		'secret' => 'thisismysecret',
+		'expires' => '7 days',
+	))
+);
 // Add camelcase middleware
 $app->add(new \CamelCaseMiddleware());
 
