@@ -1,31 +1,64 @@
 <?php
 
 $app->get('/ingest', function() use ($app) {
-	R::nuke();
+	// R::nuke();
 
-	$xml = simplexml_load_file('http://www.trumba.com/calendars/brisbane-events-rss.rss?filterview=parks');
-	$namespaces = $xml->getNamespaces(true);
-
-	foreach($xml->channel->item as $item) {
-		$xCal = $item->children($namespaces['xCal']);
-		$xTrumba = $item->children($namespaces['x-trumba']);
-
-		$event = R::dispense('event');
-		$event->title = (string)$item->title;
-		$event->source = 'parks';
-		$event->location = (string)$xCal->location;
-		$event->description = (string)$xCal->description;
-		$event->start = strtotime($xCal->dtstart);
-		$event->end = strtotime($xCal->dtend);
-		$event->uid = (string)$xCal->uid;
-		$customFields = $xTrumba->customfield;
-		foreach($customFields as $customField) {
-			$name = strtolower(str_replace(' ', '', trim($customField->attributes()->name)));
-			$event->{$name} = (string)$customField;
-		}
-		R::store($event);
+	$datasets = array(
+		// 'parks' => 'http://www.trumba.com/calendars/brisbane-events-rss.rss?filterview=parks',
+		'riverstage' => 'http://www.trumba.com/calendars/brisbane-riverstage.rss',
+		'festivals' => 'http://www.trumba.com/calendars/brisbane-festival.rss',
+		'valleymalls' => 'http://www.trumba.com/calendars/brisbanes-calendar-venues-calendar.rss?filterview=Valley%20Malls',
+		'museum' => 'http://www.trumba.com/calendars/mob.rss',
+		'bbc' => 'http://www.trumba.com/calendars/brisbane-city-council.rss',
+		'library' => 'http://www.trumba.com/calendars/libraries.rss',
+		'planetarium' => 'http://www.trumba.com/calendars/planetarium.rss'
+	);
+	foreach($datasets as $type => $url) {
+		storeFeed($url, $type);
 	}
 });
+
+function storeFeed($url, $type) {
+	$xml = simplexml_load_file($url);
+	$namespaces = $xml->getNamespaces(true);
+	foreach($xml->channel->item as $item) {
+		storeItem($item, $namespaces, $type);
+	}
+}
+function storeItem($item, $namespaces, $source) {
+	$xCal = $item->children($namespaces['xCal']);
+	$xTrumba = $item->children($namespaces['x-trumba']);
+
+	$title = (string)$item->title;
+	$start = strtotime($xCal->dtstart);
+	$end = strtotime($xCal->dtend);
+
+	$existingEvent = R::findOne('event', ' title = :title AND start = :start AND end =:end ', array(
+		'title' => trim($title),
+		'start' => $start,
+		'end' => $end	
+	));
+
+	if($existingEvent) {
+		echo 'existing event ' . $title . ' ';
+		return;
+	}
+
+	$event = R::dispense('event');
+	$event->title = $title;
+	$event->source = $source;
+	$event->location = (string)$xCal->location;
+	$event->description = (string)$xCal->description;
+	$event->start = $start;
+	$event->end = $end;
+	$event->uid = (string)$xCal->uid;
+	$customFields = $xTrumba->customfield;
+	foreach($customFields as $customField) {
+		$name = strtolower(str_replace(' ', '', trim($customField->attributes()->name)));
+		$event->{$name} = (string)$customField;
+	}
+	R::store($event);
+}
 
 $app->get('/events', function() {
 	$events = R::findAll('event', ' LIMIT 10 ');

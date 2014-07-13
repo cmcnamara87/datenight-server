@@ -37,6 +37,15 @@ $app->group('/me', $authenticate($app), function () use ($app) {
 
 		$user->partner_id = $partner->id;
 		R::store($user);
+
+		if($partner->partner_id == $user->id) {
+			// the partner is already linked to you
+			// remove codes on both
+			$user->code = null;
+			R::store($user);
+			$partner->code = null;
+			R::store($partner);
+		}
 		echo json_encode($partner->export(), JSON_NUMERIC_CHECK);
 	});
 	// $app->post('/partner'. function() {
@@ -54,16 +63,43 @@ $app->group('/me', $authenticate($app), function () use ($app) {
 		$user = R::load('user', $_SESSION['userId']);
 		$partner = R::load('user', $user->partner_id);
 
-		$events = R::findAll('event', ' ORDER BY start ASC LIMIT 10 ');
+		$events = R::find('event', ' end >= :time ORDER BY start ASC LIMIT 40 ', array('time' => mktime(0, 0, 0)));
+		$exploreEvents = array();
 		foreach($events as &$event) {
+
+			// if(stripos($event->title, 'kid')) {
+			// 	continue;
+			// }
+			// if(stripos($event->description, 'kid')) {
+			// 	continue;
+			// }
+			// if(stripos($event->title, 'child')) {
+			// 	continue;
+			// }
+			// if(stripos($event->description, 'child')) {
+			// 	continue;
+			// }
 			// Get the hearts for the couple
-			$event->hearts = R::find('heart', ' event_id = :event_id AND (user_id = :user_id OR user_id = :partner_id) ', array(
+			$event->facilities = true;
+			$hearts = R::find('heart', ' event_id = :event_id AND (user_id = :user_id OR user_id = :partner_id) ', array(
 				'event_id' => $event->id,
 				'user_id' => $user->id,
 				'partner_id' => $partner->id
 			));
+			$event->hearts = $hearts;
+
+			// $exploreEvents[] = $event;			
+			$found = false;
+			foreach($hearts as $heart) {
+				if($heart->user_id == $user->id) {
+					$found = true;
+				}
+			}
+			if(!$found) {
+				$exploreEvents[] = $event;
+			}
 		}
-		echo json_encode(R::exportAll($events));
+		echo json_encode(R::exportAll($exploreEvents), JSON_NUMERIC_CHECK);
 	});
 
 	$app->get('/events2', function() use ($app) {
@@ -78,14 +114,37 @@ $app->group('/me', $authenticate($app), function () use ($app) {
 
 		$eventIds = array();
 		foreach($hearts as $heart) {
-			$eventIds[] = $heart->id;
+			$eventIds[] = $heart->event_id;
 		}
+
 		$events = R::loadAll('event', array_unique($eventIds));
+		$goodEvents = array();
 		foreach($events as &$event) {
-			// Get the hearts for the couple
-			$event->hearts = $event->ownHeartList;
+
+			// if(stripos($event->title, 'kid')) {
+			// 	continue;
+			// }
+			// if(stripos($event->description, 'kid')) {
+			// 	continue;
+			// }
+			// if(stripos($event->title, 'child')) {
+			// 	continue;
+			// }
+			// if(stripos($event->description, 'child')) {
+			// 	continue;
+			// }
+			
+			$event->facilities = true;
+			$hearts = R::find('heart', ' event_id = :event_id AND (user_id = :user_id OR user_id = :partner_id) ', array(
+				'event_id' => $event->id,
+				'user_id' => $user->id,
+				'partner_id' => $partner->id
+			));
+			$event->hearts = $hearts;
+
+			$goodEvents[] = $event;
 		}
-		echo json_encode(R::exportAll($events));
+		echo json_encode(R::exportAll($goodEvents), JSON_NUMERIC_CHECK);
 	});
 
 	// $app->get('/hearts', function() {
